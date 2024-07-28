@@ -4,6 +4,8 @@
 #define WORD_LEN 15
 #define DEFINITION_LEN 50
 
+int DICT_LEN = 0;
+
 struct entry
 {
     char *word;
@@ -56,6 +58,7 @@ struct entry *open_dictionary(char *path)
             dictionary_index++;
         }
     }
+    DICT_LEN = dictionary_index;
     free(buffer);
     fclose(in);
     return new_dictionary;
@@ -74,15 +77,40 @@ int compareStrings(const char s1[], const char s2[])
     return result;
 }
 
-int lookup(const struct entry dictionary[], const char search[],
-           const int entries)
+int lookup(const struct entry *dictionary, const char search[])
 {
-    for (int i = 0; i < entries; i++)
+    for (int i = 0; i < DICT_LEN; i++)
     {
         if (compareStrings(search, dictionary[i].word) == 0)
             return i;
     }
     return -1;
+}
+void add_new_word_to_dictionary(char *new_word, char *dict_path)
+{
+    printf("Sorry, %s is not in my dictionary.\n", new_word);
+    printf("Do you wan to add \"%s\" to dictionary? YES, no [Y/n]\n", new_word);
+    char input;
+    scanf("%c", &input);
+    while (getchar() != '\n')
+        ;
+    if (input == 'y' || input == 'Y')
+    {
+        FILE *in = open_file(dict_path, "a");
+        size_t size;
+        fputs(new_word, in);
+        printf("Please enter a definition for %s \n", new_word);
+        char *definition = NULL;
+        getline(&definition, &size, stdin);
+        fputs(":", in);
+        fputs(definition, in);
+        fputs("\n", in);
+        printf("Updated definition %s for word \"%s\" \n", definition, new_word);
+    }
+    else
+    {
+        printf("No Update.");
+    }
 }
 
 int main(int argc, char *argv[])
@@ -97,11 +125,11 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
     struct entry *dictionary = open_dictionary(argv[2]);
-    entryNumber = lookup(dictionary, argv[1], entries);
+    entryNumber = lookup(dictionary, argv[1]);
     if (entryNumber != -1)
         printf("Found ! %s is %s\n", argv[1], dictionary[entryNumber].definition);
     else
-        printf("Sorry, %s is not in my dictionary.\n", argv[1]);
+        add_new_word_to_dictionary(argv[1], argv[2]);
 
     free(dictionary);
     return EXIT_SUCCESS;
